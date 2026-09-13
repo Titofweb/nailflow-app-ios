@@ -1,0 +1,82 @@
+# Projet Xcode d Olympique Nails, décrit dans un fichier texte.
+#
+# POURQUOI PAS UN .xcodeproj DIRECTEMENT. Un .xcodeproj est un dossier au
+# format interne d'Xcode, illisible en diff et qui entre en conflit au moindre
+# travail à deux. Surtout, la version précédente n'en avait pas du tout : la
+# marche à suivre demandait de le reconstruire À LA MAIN dans Xcode à chaque
+# fois — donc impossible à compiler ailleurs que sur le poste où il avait été
+# assemblé, et rien pour garantir deux montages identiques.
+#
+# Ici le projet est ENGENDRÉ à partir de ce fichier, par XcodeGen :
+#
+#     brew install xcodegen        (une fois, sur le Mac)
+#     cd "nailflow App Apple/SLNails" && xcodegen generate
+#
+# Le .xcodeproj produit n'est pas versionné : il se refabrique en deux
+# secondes, et c'est ce fichier-ci qui fait foi.
+#
+# C'est aussi ce qui permet à GitHub de compiler l'appli sans qu'aucun Mac ne
+# soit allumé chez toi — voir .github/workflows/build-ios.yml.
+
+name: OlympiqueNails
+
+options:
+  bundleIdPrefix: fr.olympiquenails
+  deploymentTarget:
+    # iOS 14 : couvre les iPhone 6s et suivants. Descendre plus bas n'apporte
+    # rien — ces modèles ne reçoivent plus de mises à jour du système.
+    iOS: "14.0"
+  createIntermediateGroups: true
+
+packages:
+  OneSignal:
+    url: https://github.com/OneSignal/OneSignal-iOS-SDK
+    # Sans notifications push, l'appli n'a aucune raison d'exister sur iOS :
+    # un site web fait déjà tout le reste. C'est aussi l'argument principal
+    # face à la règle 4.2 d'Apple (« minimum functionality »).
+    majorVersion: 5.0.0
+
+targets:
+  OlympiqueNails:
+    type: application
+    platform: iOS
+
+    sources:
+      # LE CODE EST PARTAGÉ AVEC L'AUTRE MARQUE, et compilé tel quel dans les
+      # deux. Chacune avait sa copie, et elles avaient déjà divergé.
+      - path: ../Shared
+      - path: OlympiqueNails
+        excludes:
+          - Info.plist
+
+    dependencies:
+      - package: OneSignal
+        product: OneSignalFramework
+
+    info:
+      path: OlympiqueNails/Info.plist
+
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.olympiquenails.app
+        PRODUCT_NAME: Olympique Nails
+        INFOPLIST_FILE: OlympiqueNails/Info.plist
+        # L'icône vient du catalogue d'images ; il faut y déposer le PNG
+        # 1024×1024, sans quoi l'App Store refuse l'envoi.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        # La signature est laissée à Xcode sur le Mac ; la compilation de
+        # vérification sur GitHub, elle, se fait sans signer.
+        CODE_SIGN_STYLE: Automatic
+
+# LE SCHÉMA, DÉCLARÉ PLUTÔT QU'ESPÉRÉ. xcodebuild -scheme demande un schéma ;
+# sans cette section, il faudrait compter sur celui que XcodeGen veut bien
+# créer tout seul. On préfère le dire.
+schemes:
+  OlympiqueNails:
+    build:
+      targets:
+        OlympiqueNails: all
