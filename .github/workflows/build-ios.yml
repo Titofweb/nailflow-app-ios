@@ -1,0 +1,60 @@
+# Compile les deux applis iPhone, sans Mac et sans compte Apple.
+#
+# À QUOI ÇA SERT, ALORS QU'ON NE PEUT PAS PUBLIER DEPUIS ICI : à savoir si le
+# code COMPILE. C'est la question qui reste ouverte tant qu'on n'a pas de Mac,
+# et elle se répond sans payer les 99 € du programme développeur — la
+# compilation pour le simulateur ne demande aucune signature.
+#
+# Même principe que build-apk.yml côté Android : on pousse, GitHub compile,
+# et la coche verte dit que tout va bien. Une croix rouge nomme le fichier et
+# la ligne.
+#
+# Pour ENVOYER l'appli à l'App Store, il faudra en plus un certificat et un
+# profil de provisionnement rangés dans les secrets du dépôt — voir
+# ETAT-DES-LIEUX.md. Ce n'est pas fait ici : cela demande le compte Apple.
+
+name: Build iOS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    # Un runner macOS : Xcode n'existe que là. Attention, sur un dépôt privé
+    # ces minutes sont facturées plus cher que les minutes Linux.
+    runs-on: macos-14
+
+    strategy:
+      # Les deux marques sont compilées indépendamment : si l'une casse,
+      # l'autre le dit quand même.
+      fail-fast: false
+      matrix:
+        marque: [ SLNails, OlympiqueNails ]
+
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Installation de XcodeGen
+        run: brew install xcodegen
+
+      - name: Fabrication du projet Xcode
+        working-directory: ${{ matrix.marque }}
+        run: xcodegen generate
+
+      - name: Compilation (simulateur, sans signature)
+        working-directory: ${{ matrix.marque }}
+        # -destination « generic/platform=iOS Simulator » : on compile pour le
+        # simulateur, ce qui n'exige aucun certificat. C'est exactement ce
+        # qu'on veut vérifier — que le Swift est juste.
+        # Pas de mise en forme des logs : le journal brut est plus long, mais
+        # il ne dépend d'aucun outil à installer. Ce workflow ne doit échouer
+        # que pour une seule raison — le code.
+        run: |
+          xcodebuild build \
+            -project "${{ matrix.marque }}.xcodeproj" \
+            -scheme "${{ matrix.marque }}" \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO
