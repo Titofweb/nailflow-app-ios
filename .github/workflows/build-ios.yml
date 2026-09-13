@@ -24,7 +24,7 @@ jobs:
   build:
     # Un runner macOS : Xcode n'existe que là. Attention, sur un dépôt privé
     # ces minutes sont facturées plus cher que les minutes Linux.
-    runs-on: macos-14
+    runs-on: macos-15
 
     strategy:
       # Les deux marques sont compilées indépendamment : si l'une casse,
@@ -40,6 +40,11 @@ jobs:
       - name: Installation de XcodeGen
         run: brew install xcodegen
 
+      - name: Versions utilisées
+        run: |
+          xcodebuild -version
+          xcodegen --version
+      
       - name: Fabrication du projet Xcode
         working-directory: ${{ matrix.marque }}
         run: xcodegen generate
