@@ -61,5 +61,6 @@ jobs:
           xcodebuild build \
             -project "${{ matrix.marque }}.xcodeproj" \
             -scheme "${{ matrix.marque }}" \
+            -configuration Release \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO
